@@ -1,35 +1,42 @@
-name: arXiv Daily Digest
+name: Daily Digest & Enforcer
 
 on:
   schedule:
-    - cron: "0 13 * * *"
+    - cron: "0 22 * * *"   # 日本時間 朝7:00 (UTC 22:00)
   workflow_dispatch:
 
 jobs:
-  send-digest:
+  arxiv-digest:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run daily digest
+      - run: pip install -r requirements.txt
+      - run: python arxiv_digest.py
         env:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          TO_EMAIL: ${{ secrets.TO_EMAIL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_API_URL: ${{ secrets.LLM_API_URL }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
-        run: python arxiv_daily_digest.py
+
+  moodle-enforcer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python moodle_enforcer.py
+        env:
+          MOODLE_ICAL_URL: ${{ secrets.MOODLE_ICAL_URL }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
